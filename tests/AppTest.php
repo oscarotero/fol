@@ -2,8 +2,7 @@
 
 namespace Fol\Tests;
 
-use Fol\App;
-use Fol\ServiceProviderInterface;
+use Fol\{App, ServiceProviderInterface};
 use Zend\Diactoros\Uri;
 use PHPUnit_Framework_TestCase;
 use Datetime;
