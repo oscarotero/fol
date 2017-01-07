@@ -1,0 +1,37 @@
+{
+	"name": "fol/core",
+	"type": "library",
+	"description": "App to build websites",
+	"homepage": "https://github.com/fol-project/core",
+	"license": "MIT",
+	"authors": [
+		{
+			"name": "Oscar Otero",
+			"email": "oom@oscarotero.com",
+			"homepage": "http://oscarotero.com",
+			"role": "Developer"
+		}
+	],
+	"support": {
+		"email": "oom@oscarotero.com",
+		"issues": "https://github.com/fol-project/core/issues"
+	},
+	"require": {
+		"php": "^7.0",
+		"container-interop/container-interop": "*",
+		"psr/http-message": "^1.0"
+	},
+	"autoload": {
+		"psr-4": {
+			"Fol\\": "src/"
+		}
+	},
+	"autoload-dev": {
+		"psr-4": {
+			"Fol\\Tests\\": "tests/"
+		}
+	},
+	"require-dev": {
+		"zendframework/zend-diactoros": "^1.3"
+	}
+}
