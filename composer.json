@@ -1,7 +1,7 @@
 {
-	"name": "fol/core",
+	"name": "oscarotero/fol",
 	"type": "library",
-	"description": "App to build websites",
+	"description": "Base App class to build websites",
 	"homepage": "https://github.com/fol-project/core",
 	"license": "MIT",
 	"authors": [
