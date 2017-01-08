@@ -8,5 +8,5 @@ before_install:
   - composer install
 
 script:
-  - phpunit
+  - composer test
 

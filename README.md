@@ -26,7 +26,7 @@ $app->getPath('dir/subdir', '../other'); // /var/www/my-website/dir/other
 
 ## Container-interop
 
-It's compatible with [container-interop](https://github.com/container-interop/container-interop), and allows to add other containers:
+It's compatible with [container-interop](https://github.com/container-interop/container-interop) and [service-provider](https://github.com/container-interop/service-provider), and allows to add other containers:
 
 ```php
 use Fol\App;
@@ -34,26 +34,28 @@ use Zend\Diactoros\Uri;
 
 $app = new App(__DIR__, new Uri('http://localhost/my-website'));
 
-//Set a dependency
-$app->set('database', function () {
-    return new MyDatabaseClass($config);
+//Set a value
+$app->set('database.config', [
+    'user' => 'foo',
+    'pass' => 'bar'
+]);
+
+//Get the value
+$config = $app->get('database.config');
+
+//Set a service
+$app->addService('database', function ($app) {
+    return new DatabaseClass($app->get('database.config'));
 });
 
-//Get a dependency
+//Get the service value
 $database = $app->get('database');
 
-//You can use arrayAccess to get/set dependencies
-$app['templates'] = function () {
-    return new TemplatesEngine();
-};
-
-$templates = $app['templates'];
-
-//And add other sub-containers compatible with Container-Interop
+//Add other sub-containers compatible with Container-Interop
 $app->addContainer($container);
 
 //And add ServiceProviderInterface instances to register several dependencies
-$app->register(new MyServiceProvider());
+$app->addServiceProvider(new MyServiceProvider());
 ```
 
 That's all.

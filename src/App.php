@@ -2,24 +2,21 @@
 
 namespace Fol;
 
+use Fol\NotFoundException;
+use Fol\ContainerException;
 use Interop\Container\ContainerInterface;
+use Interop\Container\ServiceProvider;
 use Psr\Http\Message\UriInterface;
-use ArrayAccess;
 use Throwable;
-use Closure;
-use Fol\{
-    NotFoundException,
-    ContainerException,
-    ServiceProviderInterface
-};
 
 /**
  * Manages an app.
  */
-class App implements ContainerInterface, ArrayAccess
+class App implements ContainerInterface
 {
     private $containers = [];
     private $services = [];
+    private $items = [];
     private $path;
     private $uri;
 
@@ -33,99 +30,6 @@ class App implements ContainerInterface, ArrayAccess
     {
         $this->path = rtrim($path, '/') ?: '/';
         $this->uri = $uri;
-    }
-
-    /**
-     * Check whether a value exists.
-     * 
-     * @see ArrayAccess
-     * 
-     * @param string|int $id
-     */
-    public function offsetExists($id)
-    {
-        if (isset($this->services[$id])) {
-            return true;
-        }
-
-        foreach ($this->containers as $container) {
-            if ($container->has($id)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
-     * Returns a value.
-     * 
-     * @see ArrayAccess
-     * 
-     * @param string|int $id
-     */
-    public function offsetGet($id)
-    {
-        if (isset($this->services[$id])) {
-            $value = $this->services[$id];
-
-            if ($value instanceof Closure) {
-                try {
-                    return $this->services[$id] = $value($this);
-                } catch (Throwable $exception) {
-                    throw new ContainerException("Error retrieving {$id}: {$exception->getMessage()}");
-                }
-            }
-
-            return $value;
-        }
-
-        foreach ($this->containers as $container) {
-            if ($container->has($id)) {
-                return $container->get($id);
-            }
-        }
-
-        throw new NotFoundException("Identifier {$id} is not defined");
-    }
-
-    /**
-     * Set a new value.
-     * 
-     * @see ArrayAccess
-     * 
-     * @param string|int $id
-     * @param mixed  $value
-     */
-    public function offsetSet($id, $value)
-    {
-        $this->services[$id] = $value;
-    }
-
-    /**
-     * Removes a value.
-     * 
-     * @see ArrayAccess
-     * 
-     * @param string|int $id
-     */
-    public function offsetUnset($id)
-    {
-        unset($this->services[$id]);
-    }
-
-    /**
-     * Register new service provider.
-     *
-     * @param ServiceProviderInterface $provider
-     *
-     * @return self
-     */
-    public function register(ServiceProviderInterface $provider): self
-    {
-        $provider->register($this);
-
-        return $this;
     }
 
     /**
@@ -143,24 +47,95 @@ class App implements ContainerInterface, ArrayAccess
     }
 
     /**
-     * @see ContainerInterface
-     * 
-     * {@inheritdoc}
+     * Add a new service provider.
+     *
+     * @param ServiceProvider $provider
+     *
+     * @return self
      */
-    public function has($id)
+    public function addServiceProvider(ServiceProvider $provider): self
     {
-        return $this->offsetExists($id);
+        foreach ($provider->getServices() as $id => $service) {
+            $this->addService($id, $service);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Add a new service.
+     *
+     * @param string|int $id
+     * @param callable   $service
+     *
+     * @return self
+     */
+    public function addService($id, callable $service): self
+    {
+        if (empty($this->services[$id])) {
+            $this->services[$id] = [$service];
+        } else {
+            $this->services[$id][] = $service;
+        }
+
+        return $this;
     }
 
     /**
      * @see ContainerInterface
-     * 
+     *
+     * {@inheritdoc}
+     */
+    public function has($id)
+    {
+        if (isset($this->items[$id])) {
+            return true;
+        }
+
+        if (isset($this->services[$id])) {
+            return true;
+        }
+
+        foreach ($this->containers as $container) {
+            if ($container->has($id)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @see ContainerInterface
+     *
      * {@inheritdoc}
      */
     public function get($id)
     {
-        if ($this->offsetExists($id)) {
-            return $this->offsetGet($id);
+        if (array_key_exists($id, $this->items)) {
+            return $this->items[$id];
+        }
+
+        if (isset($this->services[$id])) {
+            $callback = null;
+
+            foreach ($this->services[$id] as $service) {
+                $callback = function () use ($callback, $id, $service) {
+                    try {
+                        return $service($this, $callback);
+                    } catch (Throwable $exception) {
+                        throw new ContainerException("Error retrieving {$id}: {$exception->getMessage()}");
+                    }
+                };
+            }
+
+            return $this->items[$id] = $callback();
+        }
+
+        foreach ($this->containers as $container) {
+            if ($container->has($id)) {
+                return $container->get($id);
+            }
         }
 
         throw new NotFoundException("Identifier {$id} is not defined");
@@ -168,7 +143,7 @@ class App implements ContainerInterface, ArrayAccess
 
     /**
      * Set a variable.
-     * 
+     *
      * @param string|int $id
      * @param mixed  $value
      *
@@ -176,7 +151,7 @@ class App implements ContainerInterface, ArrayAccess
      */
     public function set($id, $value): self
     {
-        $this->offsetSet($id, $value);
+        $this->items[$id] = $value;
 
         return $this;
     }

@@ -2,8 +2,10 @@
 
 namespace Fol\Tests;
 
-use Fol\{App, ServiceProviderInterface};
+use Fol\App;
 use Zend\Diactoros\Uri;
+use Interop\Container\ServiceProvider;
+use Interop\Container\ContainerInterface;
 use PHPUnit_Framework_TestCase;
 use Datetime;
 
@@ -13,10 +15,7 @@ class AppTest extends PHPUnit_Framework_TestCase
     {
         $app = new App(__DIR__, new Uri('http://domain.com/www'));
 
-        $app['config'] = function () {
-            return [1];
-        };
-
+        $app->set('config', [1]);
         $this->assertSame([1], $app->get('config'));
 
         $this->assertEquals('http://domain.com/www', (string) $app->getUri());
@@ -32,9 +31,7 @@ class AppTest extends PHPUnit_Framework_TestCase
         $app = new App(__DIR__, new Uri('http://domain.com/www'));
         $now = new Datetime('now');
 
-        $app['now'] = function () use ($now) {
-            return $now;
-        };
+        $app->set('now', $now);
 
         //Single
         $now2 = $app->get('now');
@@ -50,17 +47,13 @@ class AppTest extends PHPUnit_Framework_TestCase
         $app->addContainer($app1);
         $app->addContainer($app2);
 
-        $app1['now'] = function () {
-            return new Datetime('now');
-        };
+        $app1->set('now', new Datetime('now'));
 
-        $app2['yesterday'] = function () {
-            return new Datetime('-1 day');
-        };
+        $app2->set('yesterday', new Datetime('-1 day'));
 
-        $app['now-yesterday'] = function ($app) {
+        $app->addService('now-yesterday', function ($app) {
             return $app->get('now')->getTimestamp() - $app->get('yesterday')->getTimestamp();
-        };
+        });
 
         //Single
         $now = $app->get('now');
@@ -94,7 +87,7 @@ class AppTest extends PHPUnit_Framework_TestCase
     {
         $app = new App(__DIR__, new Uri('http://domain.com/www'));
 
-        $app->set('fail', function () {
+        $app->addService('fail', function () {
             return new UndefinedClass();
         });
 
@@ -105,13 +98,28 @@ class AppTest extends PHPUnit_Framework_TestCase
     {
         $app = new App(__DIR__, new Uri('http://domain.com/www'));
 
-        $app->register(new class implements ServiceProviderInterface {
-            public function register(App $app)
+        $app->addServiceProvider(new class implements ServiceProvider {
+            public function getServices()
             {
-                $app['foo'] = 'bar';
+                return [
+                    'foo' => function (ContainerInterface $container, callable $previous = null) {
+                        return 'bar';
+                    }
+                ];
             }
         });
 
-        $this->assertSame('bar', $app->get('foo'));
+        $app->addServiceProvider(new class implements ServiceProvider {
+            public function getServices()
+            {
+                return [
+                    'foo' => function (ContainerInterface $container, callable $previous = null) {
+                        return $previous().'.modified';
+                    }
+                ];
+            }
+        });
+
+        $this->assertSame('bar.modified', $app->get('foo'));
     }
 }
