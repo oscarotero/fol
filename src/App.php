@@ -112,24 +112,22 @@ class App implements ContainerInterface
      */
     public function get($id)
     {
-        if (array_key_exists($id, $this->items)) {
+        if (isset($this->items[$id])) {
             return $this->items[$id];
         }
 
         if (isset($this->services[$id])) {
-            $callback = null;
-
-            foreach ($this->services[$id] as $service) {
-                $callback = function () use ($callback, $id, $service) {
-                    try {
-                        return $service($this, $callback);
-                    } catch (Throwable $exception) {
-                        throw new ContainerException("Error retrieving {$id}: {$exception->getMessage()}");
-                    }
+            $callback = array_reduce($this->services[$id], function ($callback, $service) use ($id) {
+                return function () use ($callback, $service) {
+                    return $service($this, $callback);
                 };
-            }
+            });
 
-            return $this->items[$id] = $callback();
+            try {
+                return $this->items[$id] = $callback();
+            } catch (Throwable $exception) {
+                throw new ContainerException("Error retrieving {$id}: {$exception->getMessage()}");
+            }
         }
 
         foreach ($this->containers as $container) {
