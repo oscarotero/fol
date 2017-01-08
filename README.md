@@ -10,7 +10,7 @@ Manage the path of the app and the public uri using the `UriInterface` from [PSR
 use Fol\App;
 use Zend\Diactoros\Uri;
 
-$path = /var/www/my-website;
+$path = '/var/www/my-website';
 $uri = new Uri('http://localhost/my-website');
 
 $app = new App($path, $uri);
@@ -21,12 +21,12 @@ $app->getPath('dir/subdir', '../other'); // /var/www/my-website/dir/other
 
 //Get the uri
 (string) $app->getUri(); // http://localhost/my-website
-(string) $app->getUri('post/1', 'details'); // http://localhost/my-website/post/1/ver
+(string) $app->getUri('post/1', 'details'); // http://localhost/my-website/post/1/details
 ```
 
-## Container-interop
+## Container interop
 
-It's compatible with [container-interop](https://github.com/container-interop/container-interop) and [service-provider](https://github.com/container-interop/service-provider), and allows to add other containers:
+It's compatible with [container-interop](https://github.com/container-interop/container-interop) and [service-provider](https://github.com/container-interop/service-provider), and allows to nest other containers:
 
 ```php
 use Fol\App;
