@@ -4,7 +4,7 @@ namespace Fol;
 
 use Fol\NotFoundException;
 use Fol\ContainerException;
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use Interop\Container\ServiceProvider;
 use Psr\Http\Message\UriInterface;
 use Throwable;

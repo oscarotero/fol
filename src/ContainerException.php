@@ -3,7 +3,7 @@
 namespace Fol;
 
 use Exception;
-use Interop\Container\Exception\ContainerException as ContainerExceptionInterface;
+use Psr\Container\ContainerExceptionInterface;
 
 /**
  * Exception throwed by the container on error.

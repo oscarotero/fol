@@ -5,7 +5,7 @@ namespace Fol\Tests;
 use Fol\App;
 use Zend\Diactoros\Uri;
 use Interop\Container\ServiceProvider;
-use Interop\Container\ContainerInterface;
+use Psr\Container\ContainerInterface;
 use PHPUnit_Framework_TestCase;
 use Datetime;
 
@@ -71,7 +71,7 @@ class AppTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException Interop\Container\Exception\NotFoundException
+     * @expectedException Psr\Container\NotFoundExceptionInterface
      */
     public function testNotFoundException()
     {
@@ -81,7 +81,7 @@ class AppTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException Interop\Container\Exception\ContainerException
+     * @expectedException Psr\Container\ContainerExceptionInterface
      */
     public function testContainerException()
     {
