@@ -6,10 +6,10 @@ use Fol\App;
 use Zend\Diactoros\Uri;
 use Interop\Container\ServiceProvider;
 use Psr\Container\ContainerInterface;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use Datetime;
 
-class AppTest extends PHPUnit_Framework_TestCase
+class AppTest extends TestCase
 {
     public function testConfig()
     {

@@ -29,9 +29,9 @@ $app->getPath('dir/subdir', '../other'); // /var/www/my-website/dir/other
 (string) $app->getUri('post/1', 'details'); // http://localhost/my-website/post/1/details
 ```
 
-## Container interop
+## PSR-11
 
-It's compatible with [container-interop](https://github.com/container-interop/container-interop) and [service-provider](https://github.com/container-interop/service-provider), and allows to nest other containers:
+It's compatible with [PSR-11](https://github.com/php-fig/container) and [container-interop/service-provider](https://github.com/container-interop/service-provider), and allows to nest other containers:
 
 ```php
 use Fol\App;
@@ -56,7 +56,7 @@ $app->addService('database', function ($app) {
 //Get the service value
 $database = $app->get('database');
 
-//Add other sub-containers compatible with Container-Interop
+//Add other sub-containers compatible with PSR-11
 $app->addContainer($container);
 
 //And add ServiceProviderInterface instances to register several dependencies
