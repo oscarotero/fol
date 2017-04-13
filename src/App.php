@@ -126,7 +126,7 @@ class App implements ContainerInterface
             try {
                 return $this->items[$id] = $callback();
             } catch (Throwable $exception) {
-                throw new ContainerException("Error retrieving {$id}: {$exception->getMessage()}");
+                throw new ContainerException("Error retrieving {$id}", 0, $exception);
             }
         }
 
@@ -136,7 +136,7 @@ class App implements ContainerInterface
             }
         }
 
-        throw new NotFoundException("Identifier {$id} is not defined");
+        throw new NotFoundException("Identifier {$id} is not found");
     }
 
     /**
