@@ -4,7 +4,7 @@ namespace Fol\Tests;
 
 use Fol\App;
 use Zend\Diactoros\Uri;
-use Interop\Container\ServiceProvider;
+use Interop\Container\ServiceProviderInterface;
 use Psr\Container\ContainerInterface;
 use PHPUnit\Framework\TestCase;
 use Datetime;
@@ -38,38 +38,6 @@ class AppTest extends TestCase
         $this->assertSame($now, $now2);
     }
 
-    public function testMultipleContainer()
-    {
-        $app = new App(__DIR__, new Uri('http://domain.com/www'));
-        $app1 = new App(__DIR__, new Uri('http://domain.com/www'));
-        $app2 = new App(__DIR__, new Uri('http://domain.com/www'));
-
-        $app->addContainer($app1);
-        $app->addContainer($app2);
-
-        $app1->set('now', new Datetime('now'));
-
-        $app2->set('yesterday', new Datetime('-1 day'));
-
-        $app->addService('now-yesterday', function ($app) {
-            return $app->get('now')->getTimestamp() - $app->get('yesterday')->getTimestamp();
-        });
-
-        //Single
-        $now = $app->get('now');
-        $this->assertInstanceOf('Datetime', $now);
-        $this->assertSame(time(), $now->getTimestamp());
-
-        //Multiple
-        $yesterday = $app->get('yesterday');
-        $this->assertInstanceOf('Datetime', $yesterday);
-        $this->assertSame(strtotime('-1 day'), $yesterday->getTimestamp());
-
-        //Combined
-        $substract = $app->get('now-yesterday');
-        $this->assertEquals(3600 * 24, $substract);
-    }
-
     /**
      * @expectedException Psr\Container\NotFoundExceptionInterface
      */
@@ -87,7 +55,7 @@ class AppTest extends TestCase
     {
         $app = new App(__DIR__, new Uri('http://domain.com/www'));
 
-        $app->addService('fail', function () {
+        $app->addFactory('fail', function () {
             return new UndefinedClass();
         });
 
@@ -98,23 +66,21 @@ class AppTest extends TestCase
     {
         $app = new App(__DIR__, new Uri('http://domain.com/www'));
 
-        $app->addServiceProvider(new class implements ServiceProvider {
-            public function getServices()
+        $app->addServiceProvider(new class implements ServiceProviderInterface {
+            public function getFactories()
             {
                 return [
-                    'foo' => function (ContainerInterface $container, callable $previous = null) {
+                    'foo' => function (ContainerInterface $container) {
                         return 'bar';
                     }
                 ];
             }
-        });
 
-        $app->addServiceProvider(new class implements ServiceProvider {
-            public function getServices()
+            public function getExtensions()
             {
                 return [
-                    'foo' => function (ContainerInterface $container, callable $previous = null) {
-                        return $previous().'.modified';
+                    'foo' => function (ContainerInterface $container, $previous) {
+                        return $previous.'.modified';
                     }
                 ];
             }

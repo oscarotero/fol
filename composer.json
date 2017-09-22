@@ -22,7 +22,7 @@
 	},
 	"require": {
 		"php": "^7.0",
-        "container-interop/service-provider": "^0.3.0",
+        "container-interop/service-provider": "^0.4.0",
 		"psr/container": "^1.0",
         "psr/http-message": "^1.0"
 	},

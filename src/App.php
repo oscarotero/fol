@@ -5,7 +5,7 @@ namespace Fol;
 use Fol\NotFoundException;
 use Fol\ContainerException;
 use Psr\Container\ContainerInterface;
-use Interop\Container\ServiceProvider;
+use Interop\Container\ServiceProviderInterface;
 use Psr\Http\Message\UriInterface;
 use Throwable;
 
@@ -14,7 +14,6 @@ use Throwable;
  */
 class App implements ContainerInterface
 {
-    private $containers = [];
     private $services = [];
     private $items = [];
     private $path;
@@ -33,52 +32,68 @@ class App implements ContainerInterface
     }
 
     /**
-     * Add new containers.
-     *
-     * @param ContainerInterface $container
-     *
-     * @return self
-     */
-    public function addContainer(ContainerInterface $container): self
-    {
-        $this->containers[] = $container;
-
-        return $this;
-    }
-
-    /**
      * Add a new service provider.
      *
-     * @param ServiceProvider $provider
+     * @param ServiceProviderInterface $provider
      *
      * @return self
      */
-    public function addServiceProvider(ServiceProvider $provider): self
+    public function addServiceProvider(ServiceProviderInterface $provider): self
     {
-        foreach ($provider->getServices() as $id => $service) {
-            $this->addService($id, $service);
+        foreach ($provider->getFactories() as $id => $factory) {
+            $this->addFactory($id, $factory);
+        }
+
+        foreach ($provider->getExtensions() as $id => $extension) {
+            $this->addExtension($id, $extension);
         }
 
         return $this;
     }
 
     /**
-     * Add a new service.
+     * Add a new factory.
+     *
+     * @param string|int $id
+     * @param callable   $factory
+     *
+     * @return self
+     */
+    public function addFactory($id, callable $factory): self
+    {
+        $this->createServiceIfNotExists($id);
+        $this->services[$id][0] = $factory;
+
+        return $this;
+    }
+
+    /**
+     * Add a new extension.
+     *
+     * @param string|int $id
+     * @param callable   $extension
+     *
+     * @return self
+     */
+    public function addExtension($id, callable $extension): self
+    {
+        $this->createServiceIfNotExists($id);
+        $this->services[$id][] = $extension;
+
+        return $this;
+    }
+
+    /**
+     * Add a new factory.
      *
      * @param string|int $id
      * @param callable   $service
-     *
-     * @return self
      */
-    public function addService($id, callable $service): self
+    private function createServiceIfNotExists($id)
     {
         if (empty($this->services[$id])) {
-            $this->services[$id] = [$service];
-        } else {
-            $this->services[$id][] = $service;
+            $this->services[$id] = [null];
         }
-
-        return $this;
     }
 
     /**
@@ -92,14 +107,8 @@ class App implements ContainerInterface
             return true;
         }
 
-        if (isset($this->services[$id])) {
+        if (isset($this->services[$id][0])) {
             return true;
-        }
-
-        foreach ($this->containers as $container) {
-            if ($container->has($id)) {
-                return true;
-            }
         }
 
         return false;
@@ -116,23 +125,16 @@ class App implements ContainerInterface
             return $this->items[$id];
         }
 
-        if (isset($this->services[$id])) {
-            $callback = array_reduce($this->services[$id], function ($callback, $service) use ($id) {
-                return function () use ($callback, $service) {
-                    return $service($this, $callback);
-                };
-            });
-
+        if (isset($this->services[$id][0])) {
             try {
-                return $this->items[$id] = $callback();
+                return $this->items[$id] = array_reduce(
+                    $this->services[$id],
+                    function ($item, $callback) {
+                        return $callback($this, $item);
+                    }
+                );
             } catch (Throwable $exception) {
                 throw new ContainerException("Error retrieving {$id}", 0, $exception);
-            }
-        }
-
-        foreach ($this->containers as $container) {
-            if ($container->has($id)) {
-                return $container->get($id);
             }
         }
 
