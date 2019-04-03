@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 - Code improvements
+- Use strict types
 
 ## [0.3.0] - 2017-09-22
 ### Changed
