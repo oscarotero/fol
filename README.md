@@ -56,9 +56,6 @@ $app->addService('database', function ($app) {
 //Get the service value
 $database = $app->get('database');
 
-//Add other sub-containers compatible with PSR-11
-$app->addContainer($container);
-
 //And add ServiceProviderInterface instances to register several dependencies
 $app->addServiceProvider(new MyServiceProvider());
 ```

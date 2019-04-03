@@ -5,6 +5,8 @@ namespace Fol\Tests;
 use Fol\App;
 use Zend\Diactoros\Uri;
 use Interop\Container\ServiceProviderInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use PHPUnit\Framework\TestCase;
 use Datetime;
@@ -38,21 +40,19 @@ class AppTest extends TestCase
         $this->assertSame($now, $now2);
     }
 
-    /**
-     * @expectedException Psr\Container\NotFoundExceptionInterface
-     */
     public function testNotFoundException()
     {
+        $this->expectException(NotFoundExceptionInterface::class);
+        
         $app = new App(__DIR__, new Uri('http://domain.com/www'));
 
         $app->get('not-existing');
     }
 
-    /**
-     * @expectedException Psr\Container\ContainerExceptionInterface
-     */
     public function testContainerException()
     {
+        $this->expectException(ContainerExceptionInterface::class);
+
         $app = new App(__DIR__, new Uri('http://domain.com/www'));
 
         $app->addFactory('fail', function () {

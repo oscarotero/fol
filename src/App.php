@@ -19,25 +19,12 @@ class App implements ContainerInterface
     private $path;
     private $uri;
 
-    /**
-     * Constructor. Set the base path and uri
-     *
-     * @param string $path
-     * @param UriInterface $uri
-     */
     public function __construct(string $path, UriInterface $uri)
     {
         $this->path = rtrim($path, '/') ?: '/';
         $this->uri = $uri;
     }
 
-    /**
-     * Add a new service provider.
-     *
-     * @param ServiceProviderInterface $provider
-     *
-     * @return self
-     */
     public function addServiceProvider(ServiceProviderInterface $provider): self
     {
         foreach ($provider->getFactories() as $id => $factory) {
@@ -51,55 +38,26 @@ class App implements ContainerInterface
         return $this;
     }
 
-    /**
-     * Add a new factory.
-     *
-     * @param string|int $id
-     * @param callable   $factory
-     *
-     * @return self
-     */
-    public function addFactory($id, callable $factory): self
+    public function addFactory(string $id, callable $factory): self
     {
-        $this->createServiceIfNotExists($id);
-        $this->services[$id][0] = $factory;
+        $service = $this->services[$id] ?? [];
+        $service[0] = $factory;
+        $this->services[$id] = $service;
 
         return $this;
     }
 
-    /**
-     * Add a new extension.
-     *
-     * @param string|int $id
-     * @param callable   $extension
-     *
-     * @return self
-     */
     public function addExtension($id, callable $extension): self
     {
-        $this->createServiceIfNotExists($id);
-        $this->services[$id][] = $extension;
+        $service = $this->services[$id] ?? [null];
+        $service[] = $extension;
+        $this->services[$id] = $service;
 
         return $this;
-    }
-
-    /**
-     * Add a new factory.
-     *
-     * @param string|int $id
-     * @param callable   $service
-     */
-    private function createServiceIfNotExists($id)
-    {
-        if (empty($this->services[$id])) {
-            $this->services[$id] = [null];
-        }
     }
 
     /**
      * @see ContainerInterface
-     *
-     * {@inheritdoc}
      */
     public function has($id)
     {
@@ -116,8 +74,6 @@ class App implements ContainerInterface
 
     /**
      * @see ContainerInterface
-     *
-     * {@inheritdoc}
      */
     public function get($id)
     {
@@ -129,7 +85,7 @@ class App implements ContainerInterface
             try {
                 return $this->items[$id] = array_reduce(
                     $this->services[$id],
-                    function ($item, $callback) {
+                    function ($item, callable $callback) {
                         return $callback($this, $item);
                     }
                 );
@@ -141,15 +97,7 @@ class App implements ContainerInterface
         throw new NotFoundException("Identifier {$id} is not found");
     }
 
-    /**
-     * Set a variable.
-     *
-     * @param string|int $id
-     * @param mixed  $value
-     *
-     * @return self
-     */
-    public function set($id, $value): self
+    public function set(string $id, $value): self
     {
         $this->items[$id] = $value;
 
@@ -158,10 +106,6 @@ class App implements ContainerInterface
 
     /**
      * Returns the absolute path of the app.
-     *
-     * @param string ...$dirs
-     *
-     * @return string
      */
     public function getPath(string ...$dirs): string
     {
@@ -169,15 +113,11 @@ class App implements ContainerInterface
             return $this->path;
         }
 
-        return self::canonicalize($this->path, $dirs);
+        return self::canonicalize($this->path, ...$dirs);
     }
 
     /*
      * Returns the base uri of the app.
-     *
-     * @param string ...$dirs
-     *
-     * @return UriInterface
      */
     public function getUri(string ...$dirs): UriInterface
     {
@@ -185,18 +125,13 @@ class App implements ContainerInterface
             return $this->uri;
         }
 
-        return $this->uri->withPath(self::canonicalize($this->uri->getPath(), $dirs));
+        return $this->uri->withPath(self::canonicalize($this->uri->getPath(), ...$dirs));
     }
 
     /**
      * helper function to fix paths '//' or '/./' or '/foo/../' in a path.
-     *
-     * @param string   $base
-     * @param string[] $dirs
-     *
-     * @return string
      */
-    private static function canonicalize(string $base, array $dirs): string
+    private static function canonicalize(string $base, string ...$dirs): string
     {
         $path = $base.'/'.implode('/', $dirs);
         $replace = ['#(/\.?/)#', '#/(?!\.\.)[^/]+/\.\./#'];
