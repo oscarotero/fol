@@ -4,7 +4,7 @@ declare(strict_types = 1);
 namespace Fol\Tests;
 
 use Fol\App;
-use Zend\Diactoros\Uri;
+use Laminas\Diactoros\Uri;
 use Interop\Container\ServiceProviderInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Container\ContainerExceptionInterface;
